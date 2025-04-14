@@ -23,10 +23,10 @@ st.markdown("""
         
         /* Main header styling - full width */
         .header {
-            background-color: #0056b3;
+            background: linear-gradient(to right, #00dddd, #2e9bdb);
             color: white;
             padding: 1rem;
-            margin: 0 -1rem 0.5rem -1rem;  /* Negative margins to extend beyond container */
+            margin: -3rem -1rem 0.5rem -1rem;  /* Negative margins to extend beyond container */
             border-radius: 0;
         }
 
