@@ -7,20 +7,20 @@ from dotenv import load_dotenv
 # --- UI Configuration MUST BE FIRST ---
 st.set_page_config(
     page_title="Soporte NKZN",
-    page_icon="🧑",  # Using person emoji instead of robot
+    page_icon="🧑",
     layout="centered"
 )
 
 # --- Custom CSS ---
 st.markdown("""
     <style>
-        /* Main header styling */
+        /* Main header styling - extended to edges */
         .header {
             background-color: #0056b3;
             color: white;
             padding: 1rem;
-            border-radius: 0.5rem;
-            margin-bottom: 1rem;
+            margin: -1rem -1rem 1rem -1rem;  /* Negative margins to extend beyond container */
+            border-radius: 0;
         }
         
         /* Chat container styling */
@@ -31,6 +31,7 @@ st.markdown("""
             min-height: 60vh;
             max-height: 60vh;
             overflow-y: auto;
+            margin-top: -0.5rem;  /* Reduce space between header and chat */
         }
         
         /* User message styling */
@@ -88,18 +89,24 @@ st.markdown("""
         .stChatMessage .stMarkdown {
             padding: 0;
         }
+        
+        /* Remove extra padding around main container */
+        .main .block-container {
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+        }
+        
+        /* Hide the Streamlit footer */
+        footer {visibility: hidden;}
     </style>
 """, unsafe_allow_html=True)
 
 # --- Configuration Section ---
 def initialize_openai_client():
     """Initialize OpenAI client with secure API key loading"""
-    
-    # Load from .env first (development)
     load_dotenv()  
     api_key = os.getenv("OPENAI_API_KEY")
     
-    # Fallback to Streamlit secrets (production)
     if not api_key and 'OPENAI_API_KEY' in st.secrets:
         api_key = st.secrets['OPENAI_API_KEY']
     
@@ -123,21 +130,15 @@ st.markdown("""
 
 # Show loading animation initially
 with st.spinner(""):
-    time.sleep(1)  # Simulate loading time
+    time.sleep(1)
 
 # --- Session State Initialization ---
 if "messages" not in st.session_state:
-    # Create new conversation thread
     thread = client.beta.threads.create()
     st.session_state.thread_id = thread.id
-    
-    # Initial assistant message
     st.session_state.messages = [
         {"role": "assistant", "content": "¡Hola! Soy tu asistente de NKZN. ¿En qué puedo ayudarte hoy?"}
     ]
-
-# --- Display Message History ---
-st.markdown('<div class="chat-container">', unsafe_allow_html=True)
 
 for msg in st.session_state.messages:
     if msg["role"] == "user":
@@ -150,13 +151,10 @@ st.markdown('</div>', unsafe_allow_html=True)
 
 # --- Message Processing ---
 if prompt := st.chat_input("Escribe tu mensaje aquí..."):
-    # Add user message to UI and state
     st.session_state.messages.append({"role": "user", "content": prompt})
     st.markdown(f'<div class="user-message">{prompt}</div>', unsafe_allow_html=True)
     
-    # Generate assistant response
     with st.chat_message("assistant", avatar="🧑"):
-        # Show typing indicator
         typing_indicator = st.markdown("""
             <div class="typing-indicator">
                 <div class="typing-dot"></div>
@@ -166,27 +164,23 @@ if prompt := st.chat_input("Escribe tu mensaje aquí..."):
         """, unsafe_allow_html=True)
         
         try:
-            # Add message to thread
             client.beta.threads.messages.create(
                 thread_id=st.session_state.thread_id,
                 role="user",
                 content=prompt
             )
             
-            # Create and monitor run
             run = client.beta.threads.runs.create(
                 thread_id=st.session_state.thread_id,
                 assistant_id=ASSISTANT_ID
             )
             
-            # Poll for completion
             while run.status != "completed":
                 run = client.beta.threads.runs.retrieve(
                     thread_id=st.session_state.thread_id,
                     run_id=run.id
                 )
             
-            # Retrieve and display response
             messages = client.beta.threads.messages.list(
                 thread_id=st.session_state.thread_id
             )
@@ -209,3 +203,10 @@ if prompt := st.chat_input("Escribe tu mensaje aquí..."):
             st.markdown(error_msg)
             st.session_state.messages.append({"role": "assistant", "content": error_msg})
             st.error(f"API Error: {str(e)}")
+
+# Hide Streamlit's built-in footer
+st.markdown("""
+    <style>
+        footer {visibility: hidden;}
+    </style>
+""", unsafe_allow_html=True)
