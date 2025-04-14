@@ -8,38 +8,36 @@ from dotenv import load_dotenv
 st.set_page_config(
     page_title="Soporte NKZN",
     page_icon="🧑",
-    layout="centered"
+    layout="centered",
+    initial_sidebar_state="collapsed"  # Hide sidebar by default
 )
 
 # --- Custom CSS ---
 st.markdown("""
     <style>
-        /* Main header styling - extended to edges */
+        /* Remove default padding and margins */
+        .stApp {
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        
+        /* Main header styling - full width */
         .header {
             background-color: #0056b3;
             color: white;
             padding: 1rem;
-            margin: -1rem -1rem 1rem -1rem;  /* Negative margins to extend beyond container */
+            margin: 0 -1rem 0.5rem -1rem;  /* Negative margins to extend beyond container */
             border-radius: 0;
         }
-        
-        /* Chat container styling */
-        .chat-container {
-            background-color: #f8f9fa;
-            border-radius: 0.5rem;
-            padding: 1rem;
-            min-height: 60vh;
-            max-height: 60vh;
-            overflow-y: auto;
-            margin-top: -0.5rem;  /* Reduce space between header and chat */
-        }
+
+             
         
         /* User message styling */
         .user-message {
             background-color: #e3f2fd;
             border-radius: 1rem 1rem 0 1rem;
             padding: 0.75rem;
-            margin: 0.5rem 0;
+            margin: 0.25rem 0;  /* Reduced margin */
             max-width: 80%;
             margin-left: auto;
         }
@@ -49,10 +47,15 @@ st.markdown("""
             background-color: white;
             border-radius: 1rem 1rem 1rem 0;
             padding: 0.75rem;
-            margin: 0.5rem 0;
+            margin: 0.25rem 0;  /* Reduced margin */
             max-width: 80%;
             margin-right: auto;
             box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        
+        /* First message spacing */
+        .first-message {
+            margin-top: 0 !important;
         }
         
         /* Loading animation */
@@ -90,14 +93,19 @@ st.markdown("""
             padding: 0;
         }
         
-        /* Remove extra padding around main container */
-        .main .block-container {
-            padding-top: 1rem;
-            padding-bottom: 1rem;
+        /* Chat input styling */
+        .stChatInput {
+            margin-top: 0.5rem !important;
         }
         
         /* Hide the Streamlit footer */
         footer {visibility: hidden;}
+        
+        /* Remove extra padding */
+        .main .block-container {
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+        }
     </style>
 """, unsafe_allow_html=True)
 
@@ -123,14 +131,10 @@ client = initialize_openai_client()
 # Custom header with logo and title
 st.markdown("""
     <div class="header">
-        <h1 style="margin:0;">Soporte NKZN</h1>
-        <p style="margin:0; font-size:1.2rem;">Expertos en tecnología!</p>
+        <h1 style="margin:0; font-size:1.8rem;">Soporte NKZN</h1>
+        <p style="margin:0; font-size:1.1rem;">Expertos en tecnología!</p>
     </div>
 """, unsafe_allow_html=True)
-
-# Show loading animation initially
-with st.spinner(""):
-    time.sleep(1)
 
 # --- Session State Initialization ---
 if "messages" not in st.session_state:
@@ -140,12 +144,13 @@ if "messages" not in st.session_state:
         {"role": "assistant", "content": "¡Hola! Soy tu asistente de NKZN. ¿En qué puedo ayudarte hoy?"}
     ]
 
-for msg in st.session_state.messages:
+
+for i, msg in enumerate(st.session_state.messages):
     if msg["role"] == "user":
-        st.markdown(f'<div class="user-message">{msg["content"]}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="user-message{" first-message" if i == 1 else ""}">{msg["content"]}</div>', unsafe_allow_html=True)
     else:
         with st.chat_message("assistant", avatar="🧑"):
-            st.markdown(msg["content"])
+            st.markdown(f'<div class="assistant-message{" first-message" if i == 0 else ""}">{msg["content"]}</div>', unsafe_allow_html=True)
 
 st.markdown('</div>', unsafe_allow_html=True)
 
@@ -192,7 +197,7 @@ if prompt := st.chat_input("Escribe tu mensaje aquí..."):
             if assistant_messages:
                 reply = assistant_messages[0].content[0].text.value
                 typing_indicator.empty()
-                st.markdown(reply)
+                st.markdown(f'<div class="assistant-message">{reply}</div>', unsafe_allow_html=True)
                 st.session_state.messages.append({"role": "assistant", "content": reply})
             else:
                 raise Exception("No assistant response received")
@@ -200,7 +205,7 @@ if prompt := st.chat_input("Escribe tu mensaje aquí..."):
         except Exception as e:
             typing_indicator.empty()
             error_msg = "Disculpa, estoy teniendo dificultades. ¿Podrías intentarlo de nuevo?"
-            st.markdown(error_msg)
+            st.markdown(f'<div class="assistant-message">{error_msg}</div>', unsafe_allow_html=True)
             st.session_state.messages.append({"role": "assistant", "content": error_msg})
             st.error(f"API Error: {str(e)}")
 
