@@ -4,27 +4,12 @@ import time
 from openai import OpenAI
 from dotenv import load_dotenv
 
-# --- Configuration Section ---
-def initialize_openai_client():
-    """Initialize OpenAI client with secure API key loading"""
-    
-    # Load from .env first (development)
-    load_dotenv()  
-    api_key = os.getenv("OPENAI_API_KEY")
-    
-    # Fallback to Streamlit secrets (production)
-    if not api_key and 'OPENAI_API_KEY' in st.secrets:
-        api_key = st.secrets['OPENAI_API_KEY']
-    
-    if not api_key:
-        st.error("❌ OPENAI_API_KEY not found in environment variables")
-        st.stop()
-    
-    return OpenAI(api_key=api_key)
-
-# Constants
-ASSISTANT_ID = "asst_i2ivyEjwxcYQT2QFwuioPzKh"
-client = initialize_openai_client()
+# --- UI Configuration MUST BE FIRST ---
+st.set_page_config(
+    page_title="Soporte NKZN",
+    page_icon="🧑",  # Using person emoji instead of robot
+    layout="centered"
+)
 
 # --- Custom CSS ---
 st.markdown("""
@@ -106,16 +91,27 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- UI Configuration ---
-st.set_page_config(
-    page_title="Soporte NKZN",
-    page_icon="🤖",
-    layout="centered"
-)
+# --- Configuration Section ---
+def initialize_openai_client():
+    """Initialize OpenAI client with secure API key loading"""
+    
+    # Load from .env first (development)
+    load_dotenv()  
+    api_key = os.getenv("OPENAI_API_KEY")
+    
+    # Fallback to Streamlit secrets (production)
+    if not api_key and 'OPENAI_API_KEY' in st.secrets:
+        api_key = st.secrets['OPENAI_API_KEY']
+    
+    if not api_key:
+        st.error("❌ OPENAI_API_KEY not found in environment variables")
+        st.stop()
+    
+    return OpenAI(api_key=api_key)
 
-# Show loading animation initially
-with st.spinner(""):
-    time.sleep(1)  # Simulate loading time
+# Constants
+ASSISTANT_ID = "asst_i2ivyEjwxcYQT2QFwuioPzKh"
+client = initialize_openai_client()
 
 # Custom header with logo and title
 st.markdown("""
@@ -125,6 +121,10 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
+# Show loading animation initially
+with st.spinner(""):
+    time.sleep(1)  # Simulate loading time
+
 # --- Session State Initialization ---
 if "messages" not in st.session_state:
     # Create new conversation thread
@@ -133,7 +133,7 @@ if "messages" not in st.session_state:
     
     # Initial assistant message
     st.session_state.messages = [
-        {"role": "assistant", "content": "¡Hola! Soy tu asistente de IA. ¿En qué puedo ayudarte hoy?"}
+        {"role": "assistant", "content": "¡Hola! Soy tu asistente de NKZN. ¿En qué puedo ayudarte hoy?"}
     ]
 
 # --- Display Message History ---
