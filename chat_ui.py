@@ -30,14 +30,20 @@ st.markdown("""
             border-radius: 0;
         }
 
-             
+        /* Chat container styling */
+        .chat-container {
+            height: calc(100vh - 180px);
+            overflow-y: auto;
+            padding: 0.5rem;
+            scroll-behavior: smooth;
+        }
         
         /* User message styling */
         .user-message {
             background-color: #e3f2fd;
             border-radius: 1rem 1rem 0 1rem;
             padding: 0.75rem;
-            margin: 0.25rem 0;  /* Reduced margin */
+            margin: 0.25rem 0;
             max-width: 80%;
             margin-left: auto;
         }
@@ -47,7 +53,7 @@ st.markdown("""
             background-color: white;
             border-radius: 1rem 1rem 1rem 0;
             padding: 0.75rem;
-            margin: 0.25rem 0;  /* Reduced margin */
+            margin: 0.25rem 0;
             max-width: 80%;
             margin-right: auto;
             box-shadow: 0 1px 2px rgba(0,0,0,0.1);
@@ -96,6 +102,10 @@ st.markdown("""
         /* Chat input styling */
         .stChatInput {
             margin-top: 0.5rem !important;
+            position: fixed;
+            bottom: 1rem;
+            width: calc(100% - 2rem);
+            background: white;
         }
         
         /* Hide the Streamlit footer */
@@ -108,6 +118,35 @@ st.markdown("""
         }
     </style>
 """, unsafe_allow_html=True)
+
+# --- Auto-scroll JavaScript ---
+auto_scroll_js = """
+<script>
+function scrollToBottom() {
+    const chatContainer = document.querySelector('.chat-container');
+    if (chatContainer) {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+}
+
+// Scroll to bottom initially
+scrollToBottom();
+
+// Create a MutationObserver to watch for new messages
+const observer = new MutationObserver(function(mutations) {
+    scrollToBottom();
+});
+
+// Start observing the chat container for child list changes
+const chatContainer = document.querySelector('.chat-container');
+if (chatContainer) {
+    observer.observe(chatContainer, { childList: true, subtree: true });
+}
+
+// Also scroll when window is resized (in case layout changes)
+window.addEventListener('resize', scrollToBottom);
+</script>
+"""
 
 # --- Configuration Section ---
 def initialize_openai_client():
@@ -144,6 +183,8 @@ if "messages" not in st.session_state:
         {"role": "assistant", "content": "¡Hola! Soy tu asistente de NKZN. ¿En qué puedo ayudarte hoy?"}
     ]
 
+# Chat container
+st.markdown('<div class="chat-container">', unsafe_allow_html=True)
 
 for i, msg in enumerate(st.session_state.messages):
     if msg["role"] == "user":
@@ -153,6 +194,9 @@ for i, msg in enumerate(st.session_state.messages):
             st.markdown(f'<div class="assistant-message{" first-message" if i == 0 else ""}">{msg["content"]}</div>', unsafe_allow_html=True)
 
 st.markdown('</div>', unsafe_allow_html=True)
+
+# Inject the auto-scroll JavaScript
+st.markdown(auto_scroll_js, unsafe_allow_html=True)
 
 # --- Message Processing ---
 if prompt := st.chat_input("Escribe tu mensaje aquí..."):
